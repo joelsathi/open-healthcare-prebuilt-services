@@ -4,7 +4,6 @@ from typing import Dict
 import logging
 import sys
 import signal
-import asyncio
 
 from tools.conversational_tools import configs
 
@@ -36,20 +35,15 @@ if __name__ == "__main__":
     # Set up signal handlers for graceful shutdown
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
-    
     try:
         logger.info(f"Starting MCP server on {configs.HOST}:{configs.PORT}")
         logger.info(f"Policy Reviewer URL: {configs.POLICY_REVIEWER_URL}")
         logger.info(f"Medical Reviewer URL: {configs.MEDICAL_REVIEWER_URL}")
-        
         mcp = FastMCP(**fastmcp_kwargs)
         register_tools(mcp)
         logger.info("Registered conversational tools.")
-        
         logger.info("Server starting...")
         mcp.run(transport='streamable-http')
-        
     except Exception as e:
-        logger.error(f"Failed to start server: {e}", exc_info=True)
+        logger.error(f"Failed to start server: {e}")
         sys.exit(1)
-

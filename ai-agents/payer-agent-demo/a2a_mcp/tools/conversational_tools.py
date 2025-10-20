@@ -3,12 +3,14 @@ from mcp.shared._httpx_utils import create_mcp_http_client
 from pydantic import Field
 from utils.configs import ServerConfigs
 from typing_extensions import Annotated
+import logging
 
 
+log = logging.getLogger(__name__)
 configs = ServerConfigs()
 
-
 def get_agent_url(agent: str) -> str:
+    log.debug(f"Getting URL for agent: {agent}")
     if agent == "PolicyReviewer":
         return configs.POLICY_REVIEWER_URL
     elif agent == "MedicalReviewer":
@@ -16,11 +18,11 @@ def get_agent_url(agent: str) -> str:
     # elif agent == "PayerOrchestrator":
     #     return configs.PAYER_OCHESTRATOR_URL
     else:
+        log.error(f"Unknown agent requested: {agent}")
         raise ValueError(f"Unknown agent: {agent}")
     
 
 def register_tools(mcp):
-
     @mcp.tool(
         description=(
             "Used to send messages to Personal Policy Reviewer, and Medical Reviewer agents."
@@ -44,19 +46,22 @@ def register_tools(mcp):
         ],
         message: Annotated[str, Field(description="The message to send to the agent.")],
     ) -> dict:
+        log.info(f"Sending message to {agent} agent for conversation: {conversationID}")
         agent_url = get_agent_url(agent)
+        if log.isDebugEnabled():
+            log.debug(f"Agent URL resolved to: {agent_url}")
         try:
             async with create_mcp_http_client() as client:
                 response = await client.post(
                     agent_url, json={"sessionId": conversationID, "message": message}
                 )
-                response.raise_for_status()  # Good practice to check for HTTP errors
-                # FIX: Removed 'await' from the line below
+                response.raise_for_status()
                 data = response.json()
+                log.info(f"Successfully received response from {agent} agent")
                 return data
         except httpx.HTTPStatusError as e:
-            # Be more specific about the error
+            log.error(f"HTTP error from {agent} agent: {e.response.status_code}")
             return {"error": f"HTTP error occurred: {e.response.status_code} - {e.response.text}"}
         except Exception as e:
+            log.error(f"Unexpected error sending message to {agent} agent: {str(e)}")
             return {"error": str(e)}
-
