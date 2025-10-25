@@ -18,7 +18,7 @@ import ballerina/ai;
 import ballerinax/ai.anthropic;
 
 
-final anthropic:ModelProvider _QuestionnaireGeneratorModel = check new (ANTHROPIC_API_KEY, "claude-opus-4-20250514", maxTokens = 4096);
+final anthropic:ModelProvider _QuestionnaireGeneratorModel = check new (ANTHROPIC_API_KEY, "claude-opus-4-20250514", serviceUrl = ANTHROPIC_GENERATOR_AGENT_AI_GATEWAY_URL, maxTokens = 4096);
 final ai:Agent _QuestionnaireGeneratorAgent = check new (
     systemPrompt = {
         role: "You are an expert FHIR resource generator. Your primary task is to create a valid FHIR R4 Questionnaire resource in a structured JSON format. You will be given the purpose, title, and a list of questions, and you must translate these requirements into a compliant FHIR Questionnaire.",

@@ -18,7 +18,7 @@ import ballerina/ai;
 import ballerinax/ai.anthropic;
 
 
-final anthropic:ModelProvider _ReviewerModel = check new (ANTHROPIC_API_KEY, "claude-sonnet-4-20250514");
+final anthropic:ModelProvider _ReviewerModel = check new (ANTHROPIC_API_KEY, "claude-sonnet-4-20250514", serviceUrl = ANTHROPIC_REVIEWER_AGENT_AI_GATEWAY_URL);
 final ai:Agent _ReviewerAgent = check new (
     systemPrompt = {
         role: "You are an expert FHIR validator and clinical logic analyst. Your primary function is to review a generated FHIR Questionnaire to ensure it is structurally sound. You should make sure that the questionnaire",

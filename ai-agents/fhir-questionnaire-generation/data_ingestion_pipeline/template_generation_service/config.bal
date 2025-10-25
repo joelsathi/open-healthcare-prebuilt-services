@@ -18,6 +18,8 @@
 configurable string ANTHROPIC_API_KEY = "";
 configurable string OPENAI_API_KEY = "";
 configurable int MAX_TOOL_CALL = 3;
+configurable string ANTHROPIC_API_AI_GATEWAY_URL = "https://api.anthropic.com/v1";
+configurable string OPENAI_API_AI_GATEWAY_URL = "https://api.openai.com/v1";
 
 // PGVector configurations
 configurable string PGVECTOR_HOST = "";

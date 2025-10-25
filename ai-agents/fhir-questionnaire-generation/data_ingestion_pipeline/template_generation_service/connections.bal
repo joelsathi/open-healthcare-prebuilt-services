@@ -51,12 +51,12 @@ final pgvector:VectorStore pgVectorstore = check new (
         }
     }
 );
-final openai:EmbeddingProvider openAIEmbeddingProvider = check new (OPENAI_API_KEY, "text-embedding-ada-002");
+final openai:EmbeddingProvider openAIEmbeddingProvider = check new (OPENAI_API_KEY, "text-embedding-ada-002", serviceUrl = OPENAI_API_AI_GATEWAY_URL);
 final ai:VectorKnowledgeBase aiVectorknowledgebase = new (pgVectorstore, <ai:EmbeddingProvider>openAIEmbeddingProvider);
 
 // LLM Model Providers
-final anthropic:ModelProvider anthropicModelprovider = check new (ANTHROPIC_API_KEY, "claude-sonnet-4-20250514", maxTokens = 2048);
-final openai:ModelProvider openAIModelProvider = check new (OPENAI_API_KEY, "gpt-4.1", maxTokens = 2048);
+final anthropic:ModelProvider anthropicModelprovider = check new (ANTHROPIC_API_KEY, "claude-sonnet-4-20250514", serviceUrl = ANTHROPIC_API_AI_GATEWAY_URL, maxTokens = 4096);
+final openai:ModelProvider openAIModelProvider = check new (OPENAI_API_KEY, "gpt-4.1", serviceUrl = OPENAI_API_AI_GATEWAY_URL, maxTokens = 4096);
 
 // HTTP Client for UI notifications
 final http:Client NOTIFICATION_CLIENT = check new (NOTIFICATION_URL);
