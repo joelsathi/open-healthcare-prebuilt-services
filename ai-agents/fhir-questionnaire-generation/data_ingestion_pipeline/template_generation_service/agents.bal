@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/ai;
+import ballerina/log;
 
 final ai:Agent PromptTemplateGeneratorAgent = check new (
     systemPrompt = {
@@ -63,6 +64,7 @@ Ensure that your JSON is properly formatted.
 isolated function queryRelevantChunks(string question, string fileName, string sectionTitle) returns ai:Chunk[]|error {
     ai:QueryMatch[] aiQuerymatch = check aiVectorknowledgebase.retrieve(question, MAX_CHUNKS, getFileFilters(fileName, sectionTitle));
     ai:Chunk[] aiContext = aiQuerymatch.'map(queryMatch => queryMatch.chunk);
+    log:printDebug("Retrieved " + aiContext.length().toString() + " chunks for the query");
     return aiContext;
 }
 

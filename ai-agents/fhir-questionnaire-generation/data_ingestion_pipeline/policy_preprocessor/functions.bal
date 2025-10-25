@@ -21,6 +21,7 @@ import ballerina/http;
 
 function chunk_document(string fileName) returns error? {
     string jobID = "job-" + fileName;
+    log:printInfo("Starting document chunking for file: " + fileName + " with jobID: " + jobID);
     string fileContent = check readFileContent(fileName);
     log:printInfo("Processing file: " + fileName + " with content length: " + fileContent.length().toString());
     string truncatedContent = fileContent;
@@ -45,6 +46,7 @@ function chunk_document(string fileName) returns error? {
         status: "completed",
         file_name: fileName
     };
+    log:printInfo("Sending chunking completion notification for jobID: " + jobID);
     check sendNotification(payload);
     log:printInfo("Classification results stored in memory successfully for file: " + fileName);
 }

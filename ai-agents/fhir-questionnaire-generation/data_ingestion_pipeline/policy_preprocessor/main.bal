@@ -25,6 +25,7 @@ isolated map<map<PromptTemplate>> FAILED_SCENARIOS_STORE = {};
 
 service / on new http:Listener(6080) {
     resource function get health() returns string {
+        log:printDebug("Health check endpoint accessed");
         return "Service is healthy";
     }
 
@@ -107,6 +108,7 @@ service / on new http:Listener(6080) {
     }
 
     isolated resource function post questionnaires(QuestionnaireUploadPayload payload) returns string {
+        log:printInfo(string `Received questionnaire for file: ${payload.file_name}, job: ${payload.job_id}`);
         lock {
 	        QUESITONNAIRE_STORE[payload.file_name + "_" + payload.job_id] = payload.cloneReadOnly().questionnaires;
         }

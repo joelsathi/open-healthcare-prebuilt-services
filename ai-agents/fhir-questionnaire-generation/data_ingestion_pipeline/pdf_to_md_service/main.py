@@ -18,6 +18,7 @@ import io
 import os
 import httpx
 import ftplib
+import logging
 import uvicorn
 import tempfile
 from typing import Dict, Any
@@ -27,6 +28,9 @@ from pydantic import BaseModel
 
 from settings import Configs
 from utils import convert_pdf_to_markdown
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 configs = Configs()
 # HTTP client for UI notifications with retry configuration
@@ -46,12 +50,12 @@ async def send_notification(payload: Dict[str, Any]):
             headers=headers
         )
         if response.status_code in [200, 202]:
-            print(f"Successfully sent UI notification: {payload}")
+            logger.info(f"Successfully sent UI notification: {payload}")
             return True
         else:
-            print(f"UI notification failed. Status: {response.status_code}, Response: {response.text}")
+            logger.error(f"UI notification failed. Status: {response.status_code}, Response: {response.text}")
     except Exception as e:
-        print(f"Error sending UI notification")
+        logger.error(f"Error sending UI notification")
     return False
 
 async def read_pdf_file(file_name: str):
@@ -72,10 +76,10 @@ async def read_pdf_file(file_name: str):
             temp_file_path = temp_file.name
         # Close the FTP connection
         ftp.quit()
-        print(f"Successfully downloaded PDF file for {file_name} from FTP server")
+        logger.info(f"Successfully downloaded PDF file for {file_name} from FTP server")
         return temp_file_path
     except Exception as e:
-        print(f"Error reading PDF file from FTP: {e}")
+        logger.error(f"Error reading PDF file from FTP: {e}")
         return None
 
 async def store_md_content(file_name: str, content: str):
@@ -94,7 +98,7 @@ async def store_md_content(file_name: str, content: str):
                 ftp.mkd('/md')
                 ftp.cwd('/md')
             except ftplib.error_perm as e:
-                print(f"Failed to create or access /md directory: {e}")
+                logger.error(f"Failed to create or access /md directory: {e}")
                 ftp.quit()
                 return False
         # Prepare the markdown content as a file-like object
@@ -105,18 +109,17 @@ async def store_md_content(file_name: str, content: str):
         ftp.storbinary(f'STOR {md_filename}', content_io)
         # Close the FTP connection
         ftp.quit()
-        print(f"Successfully stored markdown content for {file_name} to FTP server")
+        logger.info(f"Successfully stored markdown content for {file_name} to FTP server")
         return True
     except Exception as e:
-        print(f"Error storing markdown content to FTP: {e}")
+        logger.error(f"Error storing markdown content to FTP: {e}")
         return False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     global notification_client
     notification_client = httpx.AsyncClient()
-    print("Store service integration initialized")
+    logger.info("Store service integration initialized")
     yield
     if notification_client:
         await notification_client.aclose()
@@ -152,7 +155,7 @@ async def process_pdf_file(job_id: str, file_name: str):
                 "message": "pdf_to_md_file_not_found"
             }
             await send_notification(message)
-            print(f"Job {job_id} failed - PDF file not found")
+            logger.error(f"Job {job_id} failed - PDF file not found")
             return
         
         # Convert PDF to markdown
@@ -162,7 +165,7 @@ async def process_pdf_file(job_id: str, file_name: str):
             # Store the markdown content
             storage_success = await store_md_content(file_name, markdown_content)
 
-            print(f"Storage success: {storage_success}")
+            logger.info(f"Storage success: {storage_success}")
             
             if storage_success:
                 # Send completion notification to UI
@@ -173,7 +176,7 @@ async def process_pdf_file(job_id: str, file_name: str):
                     "message": "pdf_to_md_done"
                 }
                 await send_notification(message)
-                print(f"Job {job_id} completed successfully")
+                logger.info(f"Job {job_id} completed successfully")
             else:
                 message = {
                     "status": "failed",
@@ -182,7 +185,7 @@ async def process_pdf_file(job_id: str, file_name: str):
                     "message": "pdf_to_md_storage_failed"
                 }
                 await send_notification(message)
-                print(f"Job {job_id} failed during storage")
+                logger.error(f"Job {job_id} failed during storage")
         else:
             message = {
                 "status": "failed",
@@ -191,10 +194,10 @@ async def process_pdf_file(job_id: str, file_name: str):
                 "message": "pdf_to_md_failed"
             }
             await send_notification(message)
-            print(f"Job {job_id} failed during conversion")
+            logger.error(f"Job {job_id} failed during conversion")
             
     except Exception as e:
-        print(f"Error processing job {job_id}: {e}")
+        logger.error(f"Error processing job {job_id}: {e}")
         # Send error notification
         message = {
             "status": "error",
@@ -207,7 +210,7 @@ async def process_pdf_file(job_id: str, file_name: str):
         # Clean up temporary file
         if file_path and os.path.exists(file_path):
             os.unlink(file_path)
-            print(f"Cleaned up temporary file: {file_path}")
+            logger.info(f"Cleaned up temporary file: {file_path}")
 
 @app.post("/convert", response_model=Dict[str, str])
 async def convert_pdf_to_md(
@@ -224,6 +227,8 @@ async def convert_pdf_to_md(
         
         if not request.file_name or not request.file_name.strip():
             raise HTTPException(status_code=400, detail="file_name is required")
+        
+        logger.info(f"Received conversion request - job_id: {request.job_id}, file_name: {request.file_name}")
         # Start background processing
         background_tasks.add_task(
             process_pdf_file, 

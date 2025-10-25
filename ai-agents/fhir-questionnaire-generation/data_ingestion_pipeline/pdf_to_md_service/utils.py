@@ -14,6 +14,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import logging
 from docling.document_converter import DocumentConverter
 
 def convert_pdf_to_markdown(pdfFile) -> str:
@@ -24,13 +25,16 @@ def convert_pdf_to_markdown(pdfFile) -> str:
         source (str): The path or URL of the PDF document to convert.
         output_dir (str): The directory where the Markdown file will be saved.
     """
+    logger = logging.getLogger(__name__)
     try:
+        logger.info(f"Starting PDF to Markdown conversion for file: {pdfFile}")
         converter = DocumentConverter()
         result = converter.convert(pdfFile)
         markdown_content = result.document.export_to_markdown()
+        logger.info("PDF to Markdown conversion completed successfully")
         return markdown_content
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
         raise e
 
 def save_file(file_path: str, content: str) -> None:
