@@ -49,10 +49,16 @@ type NotificationPayload record {
     string response?;
 };
 
+type PromptTemplate record {
+    string title;
+    string prompt;
+};
+
 type QuestionnaireUploadPayload record {
     string file_name;
     string job_id;
     map<json> questionnaires;
+    map<PromptTemplate> failed_scenarios;
 };
 
 type UploadResponse record {

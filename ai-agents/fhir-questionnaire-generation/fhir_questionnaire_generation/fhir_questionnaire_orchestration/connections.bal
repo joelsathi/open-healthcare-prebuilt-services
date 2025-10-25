@@ -19,5 +19,19 @@ import ballerina/http;
 // HTTP Client for UI notifications
 final http:Client POLICY_FLOW_ORCHESTRATOR_CLIENT = check new (POLICY_FLOW_ORCHESTRATOR);
 
-final http:Client _QuestionnaireGeneratorAgent = check new (FHIR_QUESTIONNAIRE_GENERATOR_URL, {timeout: 30000});
-final http:Client _ReviewerAgent = check new (FHIR_REVIEWER_URL, {timeout: 30000});
+// HTTP Clients for Agents
+final http:Client _QuestionnaireGeneratorAgent = check new (FHIR_QUESTIONNAIRE_GENERATOR_URL, {
+        timeout: 30000,
+        retryConfig: {
+            count: 3,
+            interval: 2
+        }
+});
+
+final http:Client _ReviewerAgent = check new (FHIR_REVIEWER_URL, {
+        timeout: 30000,
+        retryConfig: {
+            count: 3,
+            interval: 2
+        }
+});

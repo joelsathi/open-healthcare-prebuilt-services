@@ -21,6 +21,7 @@ import ballerina/mime;
 import ballerina/regex;
 
 isolated map<map<json>> QUESITONNAIRE_STORE = {};
+isolated map<map<PromptTemplate>> FAILED_SCENARIOS_STORE = {};
 
 service / on new http:Listener(6080) {
     resource function get health() returns string {
@@ -109,6 +110,9 @@ service / on new http:Listener(6080) {
         lock {
 	        QUESITONNAIRE_STORE[payload.file_name + "_" + payload.job_id] = payload.cloneReadOnly().questionnaires;
         }
+        lock {
+            FAILED_SCENARIOS_STORE[payload.file_name + "_" + payload.job_id] = payload.cloneReadOnly().failed_scenarios;
+        }
         return "Questionnaire received";
     }
 
@@ -122,6 +126,19 @@ service / on new http:Listener(6080) {
                 return notFound.clone();
             }
             return questionnaires.cloneReadOnly();
+        }
+    }
+
+    resource function get failedScenarios(string file_name, string job_id) returns map<PromptTemplate>|http:NotFound {
+        lock {
+            map<PromptTemplate>? failedScenarios = FAILED_SCENARIOS_STORE[file_name + "_" + job_id];
+            if (failedScenarios is ()) {
+                http:NotFound notFound = {
+                    body: {"error": "Failed scenarios not found for file: " + file_name}
+                };
+                return notFound.clone();
+            }
+            return failedScenarios.cloneReadOnly();
         }
     }
 }
